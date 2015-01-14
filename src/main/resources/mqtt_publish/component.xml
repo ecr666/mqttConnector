@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="mqtt_publish" type="synapse/template" >
+    <subComponents> 
+		<component name="publish" >
+	    		<file>publish.xml</file>
+	    		<description>Publish message to a topic</description>
+		</component>			
+    </subComponents>    
+</component>

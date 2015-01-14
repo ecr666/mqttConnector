@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template xmlns="http://ws.apache.org/ns/synapse" name="publish">
+	<parameter name="topic" />
+	<parameter name="msg" />
+	<parameter name="qos" />
+	<parameter name="retain" />
+	<sequence>
+		<class name="org.wso2.carbon.connector.mqtt.MqttPublish" />
+	</sequence>
+</template>
