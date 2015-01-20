@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2005-2013, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -17,26 +17,29 @@
  */
 package org.wso2.carbon.connector.mqtt;
 
+
 public class MqttConnectConstants {
 
+	//connect options parameters 
 	public static final String MQTT_SERVER_HOST_NAME = "mqtt.server.host.name";
 	public static final String MQTT_SERVER_PORT = "mqtt.server.port";
-	public static final String MQTT_TOPIC_NAME = "mqtt.topic.name";
-	public static final String MQTT_QOS = "mqtt.subscription.qos";
-	public static final String MQTT_SESSION_CLEAN = "mqtt.session.clean";
-	public static final String MQTT_SSL_ENABLE = "mqtt.ssl.enable";
 	public static final String MQTT_USERNAME = "mqtt.connection.username";
 	public static final String MQTT_PASSWORD = "mqtt.connection.password";
-	public static final String MQTT_BLOCKING_SENDER = "mqtt.blocking.sender";
+	public static final String MQTT_CLEAN_SESSION = "cleanSession";
+	public static final String MQTT_CON_TIMEOUT = "connectionTimeout";
+	public static final String MQTT_KEEPALIVE = "keepAliveInterval";
+	public static final String MQTT_LW_MSG = "lwMessage";
+	public static final String MQTT_LW_QOS = "lwQos";
+	public static final String MQTT_LW_RETAINED = "lwRetained";
+	public static final String MQTT_LW_TOPIC = "lwTopicName";
+	public static final String MQTT_PERSISTANCE = "persistenceLocation";
+	public static final String MQTT_NON_BLOCKING = "asyncClientEnable";
+	public static final String MQTT_SSL_ENABLE = "sslEnable";
+	
+	//publish options 
+	public static final String MQTT_TOPIC_NAME = "topic";
+	public static final String MQTT_QOS = "qos";
+	public static final String MQTT_MSG = "msg";
+	
 
-/*
-
-    public static final String TWITTER_STATUS_USER_SCREEN_NAME = "twitter.status.user.screenname";
-    public static final String TWITTER_STATUS_STATUS_TEXT = "twitter.status.status.text";
-    public static final String TWITTER_API_RESPONSE = "twitter.response";
-
-    public static final String TWITTER_USER_CONSUMER_KEY = "twitter.user.oauth.consumerKey";
-    public static final String TWITTER_USER_CONSUMER_SECRET = "twitter.user.oauth.consumerSecret";
-    public static final String TWITTER_USER_ACCESS_TOKEN = "twitter.user.oauth.accessToken";
-    public static final String TWITTER_USER_ACCESS_TOKEN_SECRET = "twitter.user.oauth.accessTokenSecret";*/
 }

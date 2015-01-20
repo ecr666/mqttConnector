@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2005-2013, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -22,7 +22,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.wso2.carbon.connector.core.util.ConnectorUtils;
 
-//import twitter4j.Status;
 
 public class MqttUtils {
 
@@ -38,12 +37,29 @@ public class MqttUtils {
 	ctxt.setProperty(MqttConnectConstants.TWITTER_API_RESPONSE, status);
     }
 */
-    public static void storeLoginUser(MessageContext ctxt, String hostName, String port, String username, String password) {
+    public static void storeLoginUser1(MessageContext ctxt, String hostName, String port, String username, String password) {
 	ctxt.setProperty(MqttConnectConstants.MQTT_SERVER_HOST_NAME, hostName);
 	ctxt.setProperty(MqttConnectConstants.MQTT_SERVER_PORT, port);
 	ctxt.setProperty(MqttConnectConstants.MQTT_USERNAME, username);
 	ctxt.setProperty(MqttConnectConstants.MQTT_PASSWORD, password);
     }
+    
+    public static void storeLoginUser(MessageContext ctxt, String hostName, String port, String username, String password, String ssl, String nonBlocking, String cleanSession, String connectionTimeout, String keepAliveInterval, String lwMessage, String lwQos, String lwRetained, String lwTopicName, String persistenceLocation ) {
+    	ctxt.setProperty(MqttConnectConstants.MQTT_SERVER_HOST_NAME, hostName);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_SERVER_PORT, port);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_USERNAME, username);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_PASSWORD, password);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_SSL_ENABLE, ssl);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_NON_BLOCKING, nonBlocking);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_CLEAN_SESSION, cleanSession);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_CON_TIMEOUT, connectionTimeout);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_KEEPALIVE, keepAliveInterval);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_LW_MSG, lwMessage);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_LW_QOS, lwQos);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_LW_RETAINED, lwRetained);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_LW_TOPIC, lwTopicName);
+    	ctxt.setProperty(MqttConnectConstants.MQTT_PERSISTANCE, persistenceLocation);
+        }
 
     public static void storeErrorResponseStatus(MessageContext ctxt, Exception e) {
 	ctxt.setProperty(SynapseConstants.ERROR_EXCEPTION, e);

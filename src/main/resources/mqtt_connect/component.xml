@@ -5,7 +5,7 @@
 	    		<file>init.xml</file>
 	    		<description>Create and connect the client</description>
 		</component>
-		<component name="init" >
+		<component name="disconnect" >
 	    		<file>disconnect.xml</file>
 	    		<description>Disconnect a client from the broker</description>
 		</component>			

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2005-2013, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -20,6 +20,8 @@ package org.wso2.carbon.connector.mqtt;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
 import org.wso2.carbon.connector.core.AbstractConnector;
 import org.wso2.carbon.connector.core.ConnectException;
 
@@ -27,10 +29,18 @@ public class MqttDisconnect extends AbstractConnector {
 
     private static Log log = LogFactory.getLog(MqttDisconnect.class);
 
-  	
 
     @Override
     public void connect(MessageContext messageContext) throws ConnectException {
-	System.out.println("Come in to disconnect");
+    	try {
+			MqttClient mqttClient = new MqttClientLoader(messageContext).loadClient();
+			mqttClient.disconnect();
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (MqttException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 }

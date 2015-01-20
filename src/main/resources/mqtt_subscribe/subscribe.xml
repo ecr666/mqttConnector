@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<template xmlns="http://ws.apache.org/ns/synapse" name="subscribe">
-	<parameter name="topic" />
-	<parameter name="clean" />
-	<parameter name="qos" />
-	<sequence>
-		<class name="org.wso2.carbon.connector.mqtt.MqttSubscribe" />
-	</sequence>
-</template>
