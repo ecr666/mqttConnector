@@ -32,13 +32,13 @@ import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
  * Create the client and connect it to the hostName+port with given options
  * Return the connected mqtt client blocking or non-blocking
  */
-public class MqttClientLoader {
+public class MqttClientFactory {
 	private MessageContext messageContext;
 	private static ConcurrentHashMap<String, MqttClient> Clients = new ConcurrentHashMap<String, MqttClient>();
 	private static ConcurrentHashMap<String, MqttAsyncClient> AsyncClients = new ConcurrentHashMap<String, MqttAsyncClient>();
-	private static final Log log = LogFactory.getLog(MqttClientLoader.class);
+	private static final Log log = LogFactory.getLog(MqttClientFactory.class);
 
-	public MqttClientLoader(MessageContext ctxt) {
+	public MqttClientFactory(MessageContext ctxt) {
 		this.messageContext = ctxt;
 	}
 

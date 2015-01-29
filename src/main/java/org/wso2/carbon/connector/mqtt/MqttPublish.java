@@ -45,7 +45,7 @@ public class MqttPublish extends AbstractConnector {
 		String msg = MqttUtils.lookupTemplateParamater(messageContext, "msg");
 		MqttClient Client = null;
 		MqttAsyncClient asyncClient = null;
-		MqttClientLoader clientLoader = new MqttClientLoader(messageContext);
+		MqttClientFactory clientLoader = new MqttClientFactory(messageContext);
 		String ID = (String) messageContext.getProperty("ClientID");
 
 		// setting QoS
