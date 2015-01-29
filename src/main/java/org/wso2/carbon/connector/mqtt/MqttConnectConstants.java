@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2005-2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -17,14 +17,13 @@
  */
 package org.wso2.carbon.connector.mqtt;
 
-
 public class MqttConnectConstants {
 
-	//connect options parameters 
-	public static final String MQTT_SERVER_HOST_NAME = "mqtt.server.host.name";
-	public static final String MQTT_SERVER_PORT = "mqtt.server.port";
-	public static final String MQTT_USERNAME = "mqtt.connection.username";
-	public static final String MQTT_PASSWORD = "mqtt.connection.password";
+	// connect options parameters
+	public static final String MQTT_SERVER_HOST_NAME = "hostName";
+	public static final String MQTT_SERVER_PORT = "port";
+	public static final String MQTT_USERNAME = "username";
+	public static final String MQTT_PASSWORD = "password";
 	public static final String MQTT_CLEAN_SESSION = "cleanSession";
 	public static final String MQTT_CON_TIMEOUT = "connectionTimeout";
 	public static final String MQTT_KEEPALIVE = "keepAliveInterval";
@@ -35,11 +34,13 @@ public class MqttConnectConstants {
 	public static final String MQTT_PERSISTANCE = "persistenceLocation";
 	public static final String MQTT_NON_BLOCKING = "asyncClientEnable";
 	public static final String MQTT_SSL_ENABLE = "sslEnable";
-	
-	//publish options 
+
+	// publish options
 	public static final String MQTT_TOPIC_NAME = "topic";
 	public static final String MQTT_QOS = "qos";
 	public static final String MQTT_MSG = "msg";
-	
+	public static final String MQTT_DIS = "disconnectAfter";
+
+	public static final String INIT_MODE = "initMode";
 
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2005-2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -17,10 +17,10 @@
  */
 package org.wso2.carbon.connector.mqtt;
 
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -28,163 +28,196 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
-import com.hazelcast.logging.Log4jFactory;
-
 /**
- * @author eranda
- *
+ * Create the client and connect it to the hostName+port with given options
+ * Return the connected mqtt client blocking or non-blocking
  */
 public class MqttClientLoader {
-
 	private MessageContext messageContext;
+	private static ConcurrentHashMap<String, MqttClient> Clients = new ConcurrentHashMap<String, MqttClient>();
+	private static ConcurrentHashMap<String, MqttAsyncClient> AsyncClients = new ConcurrentHashMap<String, MqttAsyncClient>();
 	private static final Log log = LogFactory.getLog(MqttClientLoader.class);
-	private static MqttClient MQTTClient;
-	private static MqttAsyncClient MQTTAsyncClient;
 
-	/*
-	 * Create the client and connect it to the hostName+port with given options
-	 * Return the connected mqtt client
-	 */
 	public MqttClientLoader(MessageContext ctxt) {
 		this.messageContext = ctxt;
 	}
 
 	/**
-	 * 
-	 * @return
-	 * @throws MqttException
-	 * @throws NumberFormatException
+	 * @return blocking client
 	 */
-	public MqttClient loadClient() throws MqttException,
-			NumberFormatException {
+	public MqttClient loadClient() throws MqttException, NumberFormatException {
+		MqttClient blockingClient = null;
 		if (messageContext
 				.getProperty(MqttConnectConstants.MQTT_SERVER_HOST_NAME) != null
 				&& messageContext
 						.getProperty(MqttConnectConstants.MQTT_SERVER_PORT) != null) {
-			
-			//setting protocol and url
+			// setting protocol and url
 			String protocol = "tcp://";
-			if(messageContext.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE) != null)	if(messageContext.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE).toString().equalsIgnoreCase("true"))	protocol = "ssl://";
+			if (messageContext
+					.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE) != null)
+				if (messageContext
+						.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE)
+						.toString().equalsIgnoreCase("true"))
+					protocol = "ssl://";
 			String hostName = messageContext.getProperty(
 					MqttConnectConstants.MQTT_SERVER_HOST_NAME).toString();
 			String port = messageContext.getProperty(
 					MqttConnectConstants.MQTT_SERVER_PORT).toString();
-			String broker = protocol+hostName + ":" + port;
+			String broker = protocol + hostName + ":" + port;
 			log.info("Setting client to the broker: " + broker);
-			
-			// setting persistance location
+
+			// setting persistence location
 			String tmpDir = System.getProperty("java.io.tmpdir");
-			if (messageContext.getProperty(MqttConnectConstants.MQTT_PERSISTANCE) != null) {
-				tmpDir = messageContext.getProperty(MqttConnectConstants.MQTT_PERSISTANCE).toString();
+			if (messageContext
+					.getProperty(MqttConnectConstants.MQTT_PERSISTANCE) != null) {
+				tmpDir = messageContext.getProperty(
+						MqttConnectConstants.MQTT_PERSISTANCE).toString();
 			}
-			MqttDefaultFilePersistence dataStore = new MqttDefaultFilePersistence(tmpDir);
-			
-			//if the Async Client is exists and connected disconnect it
-			if(MQTTAsyncClient != null && MQTTAsyncClient.isConnected())	MQTTAsyncClient.disconnect();
-			
-			//if not the client is already created or if the broker url has been updated
-			if ((MQTTClient == null) || (MQTTClient != null && !MQTTClient.getServerURI().equalsIgnoreCase(broker))){
-				// creating the client
-				MQTTClient = new MqttClient(broker, MqttClient.generateClientId());
+			MqttDefaultFilePersistence dataStore = new MqttDefaultFilePersistence(
+					tmpDir);
+
+			// getting the blocking client and connecting it to the MB
+			String ID = (String) messageContext.getProperty("ClientID");
+			if (messageContext.getProperty(MqttConnectConstants.INIT_MODE)
+					.equals("true")) {
+				blockingClient = new MqttClient(broker, ID);
+				Clients.put(ID, blockingClient);
+			} else {
+				blockingClient = Clients.get(ID);
 			}
-			if(!MQTTClient.isConnected())	MQTTClient.connect(getOptions());
-			
+			if (!blockingClient.isConnected()) {
+				blockingClient.connect(getOptions());
+			}
 		} else {
-			MQTTClient = null;
+			blockingClient = null;
 		}
-		return MQTTClient;
+		return blockingClient;
 	}
-	
-	public MqttAsyncClient loadAsyncClient()throws MqttException,
-	NumberFormatException {
+
+	/**
+	 * @return non-blocking client
+	 */
+	public MqttAsyncClient loadAsyncClient() throws MqttException,
+			NumberFormatException {
+		MqttAsyncClient asyncClient = null;
 		if (messageContext
 				.getProperty(MqttConnectConstants.MQTT_SERVER_HOST_NAME) != null
 				&& messageContext
 						.getProperty(MqttConnectConstants.MQTT_SERVER_PORT) != null) {
-			
-			//setting protocol
+			// setting protocol
 			String protocol = "tcp://";
-			if(messageContext.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE) != null)	if(messageContext.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE).toString().equalsIgnoreCase("true"))	protocol = "ssl://";
+			if (messageContext
+					.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE) != null)
+				if (messageContext
+						.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE)
+						.toString().equalsIgnoreCase("true"))
+					protocol = "ssl://";
 			String hostName = messageContext.getProperty(
 					MqttConnectConstants.MQTT_SERVER_HOST_NAME).toString();
 			String port = messageContext.getProperty(
 					MqttConnectConstants.MQTT_SERVER_PORT).toString();
-			String broker = protocol+hostName + ":" + port;
+			String broker = protocol + hostName + ":" + port;
 			log.info("Setting Async client to the broker: " + broker);
-			
-			// setting persistance location
+
+			// setting persistence location
 			String tmpDir = System.getProperty("java.io.tmpdir");
-			
-			if (messageContext.getProperty(MqttConnectConstants.MQTT_PERSISTANCE) != null) {
-				tmpDir = messageContext.getProperty(MqttConnectConstants.MQTT_PERSISTANCE).toString();
+
+			if (messageContext
+					.getProperty(MqttConnectConstants.MQTT_PERSISTANCE) != null) {
+				tmpDir = messageContext.getProperty(
+						MqttConnectConstants.MQTT_PERSISTANCE).toString();
 			}
-			MqttDefaultFilePersistence dataStore = new MqttDefaultFilePersistence(tmpDir);
-			
-			//if the Blocking Client is exists and connected, disconnect it
-			if(MQTTClient != null && MQTTClient.isConnected())	MQTTClient.disconnect();
-			
-			//if not the client is already created or broker url has been changed
-			if ((MQTTAsyncClient == null) || (MQTTClient != null && !MQTTAsyncClient.getServerURI().equalsIgnoreCase(broker))){			
-				if(MQTTAsyncClient != null)	MQTTAsyncClient.disconnect();
-				// creating the async client
-				MQTTAsyncClient = new MqttAsyncClient(broker, MqttClient.generateClientId());
+			MqttDefaultFilePersistence dataStore = new MqttDefaultFilePersistence(
+					tmpDir);
+
+			// creating the async client and connecting it
+			String ID = (String) messageContext.getProperty("ClientID");
+			if (messageContext.getProperty(MqttConnectConstants.INIT_MODE)
+					.equals("true")) {
+				asyncClient = new MqttAsyncClient(broker, ID);
+				AsyncClients.put(ID, asyncClient);
 			}
-			if(!MQTTAsyncClient.isConnected()){
-				IMqttToken conToken = MQTTAsyncClient.connect(getOptions());
+			if (!asyncClient.isConnected()) {
+				IMqttToken conToken = asyncClient.connect(getOptions());
 				conToken.waitForCompletion();
 			}
-			
+
 		} else {
-			MQTTAsyncClient = null;
+			asyncClient = null;
 		}
-		return MQTTAsyncClient;
+		return asyncClient;
 	}
-	
-	private MqttConnectOptions getOptions(){
-		//Setting Connection Options 
-		MqttConnectOptions options = new  MqttConnectOptions();
-		  
-		  //set username and password
-		  if(messageContext.getProperty(MqttConnectConstants.MQTT_USERNAME) != null &&
-				  messageContext.getProperty(MqttConnectConstants.MQTT_PASSWORD) != null){
-		  options.setUserName(messageContext.getProperty(MqttConnectConstants.MQTT_USERNAME).toString());
-		  options.setUserName(messageContext.getProperty(MqttConnectConstants.MQTT_PASSWORD).toString()); }
-		  
-		 //set last will settings 
-		  if(messageContext.getProperty(MqttConnectConstants.MQTT_LW_MSG)
-		  != null && messageContext.getProperty(MqttConnectConstants.MQTT_LW_TOPIC) != null){ int
-		  qos=1; boolean retained=false;
-		  if(messageContext.getProperty(MqttConnectConstants.MQTT_LW_QOS) != null){
-		  if(messageContext.getProperty(MqttConnectConstants.MQTT_LW_QOS).toString().equals("0") ||
-				  messageContext.getProperty(MqttConnectConstants.MQTT_LW_QOS).toString().equals("2")){
-		  qos=Integer.parseInt(messageContext.getProperty(MqttConnectConstants.MQTT_LW_QOS).toString()); } }
-		  if
-		  (messageContext.getProperty(MqttConnectConstants.MQTT_LW_RETAINED).toString().equalsIgnoreCase("true"
-		  )){ retained=true; }
-		  options.setWill(messageContext.getProperty(MqttConnectConstants.MQTT_LW_TOPIC).toString(),
-				  messageContext.getProperty(MqttConnectConstants.MQTT_LW_MSG).toString().getBytes() , qos, retained);
-		  }
-		  /*
-		   //set connection timeout
-		  if(messageContext.getProperty(MqttConnectConstants.MQTT_CON_TIMEOUT) != null){ try{
-		  options
-		  .setConnectionTimeout(Integer.parseInt(messageContext.getProperty(MqttConnectConstants
-		  .MQTT_CON_TIMEOUT).toString())); } catch(NumberFormatException e){ throw
-		  new NumberFormatException(); } }
-		  
-		  //set keepalive interval
-		  if(messageContext.getProperty(MqttConnectConstants.MQTT_KEEPALIVE) != null){ try{
-		  options.
-		  setConnectionTimeout(Integer.parseInt(messageContext.getProperty(MqttConnectConstants
-		  .MQTT_KEEPALIVE).toString())); } catch(NumberFormatException e){ throw
-		  new NumberFormatException(); } }
-		  */
-		  
-		  //set clean session : true for default
-		  if(messageContext.getProperty(MqttConnectConstants.MQTT_CLEAN_SESSION) != null)  if(messageContext.getProperty(MqttConnectConstants.MQTT_CLEAN_SESSION).toString().equalsIgnoreCase("false")){
-		  options.setCleanSession(false); }
-		  
-		  return options;
+
+	/**
+	 * Remove the client from the HashMap when disconnects
+	 * @param ClientID
+	 * @param isAsync client
+	 */
+	public void destroyClient(String ID, boolean isAsync) {
+		if (isAsync) {
+			AsyncClients.remove(ID);
+		} else {
+			Clients.remove(ID);
+		}
+	}
+
+	/**
+	 * Setting options to the mqtt client
+	 * @return options
+	 */
+	private MqttConnectOptions getOptions() {
+		// Setting Connection Options
+		MqttConnectOptions options = new MqttConnectOptions();
+
+		// set username and password
+		if (messageContext.getProperty(MqttConnectConstants.MQTT_USERNAME) != null
+				&& messageContext
+						.getProperty(MqttConnectConstants.MQTT_PASSWORD) != null) {
+			options.setUserName(messageContext.getProperty(
+					MqttConnectConstants.MQTT_USERNAME).toString());
+			options.setUserName(messageContext.getProperty(
+					MqttConnectConstants.MQTT_PASSWORD).toString());
+		}
+
+		// set last will settings
+		if (messageContext.getProperty(MqttConnectConstants.MQTT_LW_MSG) != null
+				&& messageContext
+						.getProperty(MqttConnectConstants.MQTT_LW_TOPIC) != null) {
+			int qos = 1;
+			boolean retained = false;
+			if (messageContext.getProperty(MqttConnectConstants.MQTT_LW_QOS) != null) {
+				if (messageContext
+						.getProperty(MqttConnectConstants.MQTT_LW_QOS)
+						.toString().equals("0")
+						|| messageContext
+								.getProperty(MqttConnectConstants.MQTT_LW_QOS)
+								.toString().equals("2")) {
+					qos = Integer.parseInt(messageContext.getProperty(
+							MqttConnectConstants.MQTT_LW_QOS).toString());
+				}
+			}
+			if (messageContext
+					.getProperty(MqttConnectConstants.MQTT_LW_RETAINED)
+					.toString().equalsIgnoreCase("true")) {
+				retained = true;
+			}
+			options.setWill(
+					messageContext.getProperty(
+							MqttConnectConstants.MQTT_LW_TOPIC).toString(),
+					messageContext
+							.getProperty(MqttConnectConstants.MQTT_LW_MSG)
+							.toString().getBytes(), qos, retained);
+		}
+
+		// set clean session : true for default
+		if (messageContext.getProperty(MqttConnectConstants.MQTT_CLEAN_SESSION) != null)
+			if (messageContext
+					.getProperty(MqttConnectConstants.MQTT_CLEAN_SESSION)
+					.toString().equalsIgnoreCase("false")) {
+				options.setCleanSession(false);
+			}
+
+		return options;
 	}
 
 }
