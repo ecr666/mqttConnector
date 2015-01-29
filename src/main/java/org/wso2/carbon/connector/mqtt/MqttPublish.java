@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2005-2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -29,52 +29,82 @@ import org.wso2.carbon.connector.core.AbstractConnector;
 import org.wso2.carbon.connector.core.ConnectException;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 
-
+/**
+ * Publish Mqtt messages to the broker url which is given at the init
+ */
 public class MqttPublish extends AbstractConnector {
 
-    private static Log log = LogFactory.getLog(MqttPublish.class);
+	private boolean isAsync;
 
-    public static final String MQTT_TOPIC_NAME = "topic";
-    public static final String MQTT_MSG = "msg";
+	private static Log log = LogFactory.getLog(MqttPublish.class);
 
-    @Override
-    public void connect(MessageContext messageContext) throws ConnectException {
-	String topic = MqttUtils.lookupTemplateParamater(messageContext, MQTT_TOPIC_NAME);
-	String message = MqttUtils.lookupTemplateParamater(messageContext, MQTT_MSG);
-	MqttMessage mqttMessage = new MqttMessage(message.getBytes());
-	
-	//setting QoS
-	int qos=1;
-	if(MqttUtils.lookupTemplateParamater(messageContext, MqttConnectConstants.MQTT_QOS) != null && !MqttUtils.lookupTemplateParamater(messageContext,MqttConnectConstants.MQTT_QOS).isEmpty()){
-		if(MqttUtils.lookupTemplateParamater(messageContext, MqttConnectConstants.MQTT_QOS) == "0")	qos=0;
-		else if(MqttUtils.lookupTemplateParamater(messageContext, MqttConnectConstants.MQTT_QOS) == "2") qos=2;
-	}
-	
-	try {
-		if(messageContext.getProperty(MqttConnectConstants.MQTT_NON_BLOCKING) != null && messageContext.getProperty(MqttConnectConstants.MQTT_NON_BLOCKING).toString().equalsIgnoreCase("true")){
-			MqttAsyncClient mqttAsyncClient = new MqttClientLoader(messageContext).loadAsyncClient();
-			IMqttDeliveryToken pubToken= mqttAsyncClient.publish(topic, message.getBytes(), qos, false);
-			pubToken.waitForCompletion();
+	@Override
+	public void connect(MessageContext messageContext) throws ConnectException {
+		String topic = MqttUtils.lookupTemplateParamater(messageContext,
+				"topic");
+		String msg = MqttUtils.lookupTemplateParamater(messageContext, "msg");
+		MqttClient Client = null;
+		MqttAsyncClient asyncClient = null;
+		MqttClientLoader clientLoader = new MqttClientLoader(messageContext);
+		String ID = (String) messageContext.getProperty("ClientID");
+
+		// setting QoS
+		int qos = 1;
+		if (MqttUtils.lookupTemplateParamater(messageContext,
+				MqttConnectConstants.MQTT_QOS) != null
+				&& !MqttUtils.lookupTemplateParamater(messageContext,
+						MqttConnectConstants.MQTT_QOS).isEmpty()) {
+			if (MqttUtils.lookupTemplateParamater(messageContext,
+					MqttConnectConstants.MQTT_QOS) == "0")
+				qos = 0;
+			else if (MqttUtils.lookupTemplateParamater(messageContext,
+					MqttConnectConstants.MQTT_QOS) == "2")
+				qos = 2;
 		}
-		
-		else{
-			MqttClient mqttClient = new MqttClientLoader(messageContext).loadClient();
-			mqttClient.publish( topic, message.getBytes(), qos, false );
+
+		try {
+			// if the clients have not yet being initialized
+			if (messageContext
+					.getProperty(MqttConnectConstants.MQTT_NON_BLOCKING) != null
+					&& messageContext
+							.getProperty(MqttConnectConstants.MQTT_NON_BLOCKING)
+							.toString().equalsIgnoreCase("true")) {
+				asyncClient = clientLoader.loadAsyncClient();
+				isAsync = true;
+				IMqttDeliveryToken pubToken = asyncClient.publish(topic,
+						msg.getBytes(), qos, false);
+				pubToken.waitForCompletion();
+			} else {
+				Client = clientLoader.loadClient();
+				Client.publish(topic, new MqttMessage(msg.getBytes()));
+				isAsync = false;
+			}
+
+			messageContext.setProperty(MqttConnectConstants.INIT_MODE, "false");
+
+			// disconnect the client if specified in the input parameters
+			if (MqttUtils.lookupTemplateParamater(messageContext,
+					MqttConnectConstants.MQTT_DIS) != null
+					&& MqttUtils.lookupTemplateParamater(messageContext,
+							MqttConnectConstants.MQTT_DIS).equalsIgnoreCase(
+							"true")) {
+				if (isAsync) {
+					asyncClient.disconnect();
+					asyncClient.close();
+				} else {
+					Client.disconnect();
+					Client.close();
+				}
+				clientLoader.destroyClient(ID, isAsync);
+			}
+
+		} catch (MqttPersistenceException e) {
+			log.error("Coudn't perform the operation: " + e.getMessage(), e);
+		} catch (MqttException e) {
+			log.error("Coudn't perform the operation: " + e.getMessage(), e);
+		} catch (NumberFormatException e) {
+			log.error("Coudn't perform the operation: " + e.getMessage(), e);
 		}
-			
-		if (log.isDebugEnabled()) {
-			log.info("Published Message successfully");
-		}
-	} catch (MqttPersistenceException e) {
-		log.error("Coudn't publish the message: " + e.getMessage(), e);
-		e.printStackTrace();
-	} catch (MqttException e) {
-		log.error("Coudn't publish the message: " + e.getMessage(), e);
-		e.printStackTrace();
+
 	}
-	catch (NumberFormatException e){
-		log.error("Coudn't publish the message: " + e.getMessage(), e);
-		e.printStackTrace();
-	}
-    }
 }
