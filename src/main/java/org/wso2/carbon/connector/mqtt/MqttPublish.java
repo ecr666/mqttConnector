@@ -54,11 +54,11 @@ public class MqttPublish extends AbstractConnector {
 				MqttConnectConstants.MQTT_QOS) != null
 				&& !MqttUtils.lookupTemplateParamater(messageContext,
 						MqttConnectConstants.MQTT_QOS).isEmpty()) {
-			if (MqttUtils.lookupTemplateParamater(messageContext,
-					MqttConnectConstants.MQTT_QOS) == "0")
+			if ("0".equals(MqttUtils.lookupTemplateParamater(messageContext,
+					MqttConnectConstants.MQTT_QOS)))
 				qos = 0;
-			else if (MqttUtils.lookupTemplateParamater(messageContext,
-					MqttConnectConstants.MQTT_QOS) == "2")
+			else if ("2".equals(MqttUtils.lookupTemplateParamater(messageContext,
+					MqttConnectConstants.MQTT_QOS)))
 				qos = 2;
 		}
 
@@ -99,12 +99,15 @@ public class MqttPublish extends AbstractConnector {
 			}
 
 		} catch (MqttPersistenceException e) {
-			log.error("Coudn't perform the operation: " + e.getMessage(), e);
+			log.error("Couldn't perform the operation: " + e.getMessage(), e);
 		} catch (MqttException e) {
-			log.error("Coudn't perform the operation: " + e.getMessage(), e);
+			log.error("Couldn't perform the operation: " + e.getMessage(), e);
 		} catch (NumberFormatException e) {
-			log.error("Coudn't perform the operation: " + e.getMessage(), e);
+			log.error("Couldn't perform the operation: " + e.getMessage(), e);
+		} catch (NullPointerException e) {
+			log.error("Client is not initialized: " + e.getMessage(), e);
 		}
+
 
 	}
 }
