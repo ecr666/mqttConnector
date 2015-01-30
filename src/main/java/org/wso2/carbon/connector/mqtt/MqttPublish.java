@@ -23,7 +23,6 @@ import org.apache.synapse.MessageContext;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 import org.wso2.carbon.connector.core.AbstractConnector;
 import org.wso2.carbon.connector.core.ConnectException;
@@ -34,60 +33,60 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
  */
 public class MqttPublish extends AbstractConnector {
 
-	private boolean isAsync;
-
 	private static Log log = LogFactory.getLog(MqttPublish.class);
+
+	private enum qosLevel{
+		ZERO("0"), ONE("1"), TWO("2");
+		String qos;
+		qosLevel(String s) {
+			qos = s;
+		}
+	}
 
 	@Override
 	public void connect(MessageContext messageContext) throws ConnectException {
+		MqttClient Client = null;
+		MqttAsyncClient asyncClient = null;
+		MqttClientFactory clientFactory = new MqttClientFactory(messageContext);
+		boolean isAsync;
+
+		//input parameters
 		String topic = MqttUtils.lookupTemplateParamater(messageContext,
 				"topic");
 		String msg = MqttUtils.lookupTemplateParamater(messageContext, "msg");
-		MqttClient Client = null;
-		MqttAsyncClient asyncClient = null;
-		MqttClientFactory clientLoader = new MqttClientFactory(messageContext);
+		String qosInput=MqttUtils.lookupTemplateParamater(messageContext,
+				MqttConnectConstants.MQTT_QOS);
+
 		String ID = (String) messageContext.getProperty("ClientID");
 
-		// setting QoS
+
+		// setting QoS - default is 1
 		int qos = 1;
-		if (MqttUtils.lookupTemplateParamater(messageContext,
-				MqttConnectConstants.MQTT_QOS) != null
-				&& !MqttUtils.lookupTemplateParamater(messageContext,
-						MqttConnectConstants.MQTT_QOS).isEmpty()) {
-			if ("0".equals(MqttUtils.lookupTemplateParamater(messageContext,
-					MqttConnectConstants.MQTT_QOS)))
-				qos = 0;
-			else if ("2".equals(MqttUtils.lookupTemplateParamater(messageContext,
-					MqttConnectConstants.MQTT_QOS)))
-				qos = 2;
-		}
+		if (qosLevel.ZERO.qos.equals(qosInput))	qos = 0;
+		else if (qosLevel.TWO.qos.equals(qosInput))	qos = 2;
 
 		try {
-			// if the clients have not yet being initialized
-			if (messageContext
-					.getProperty(MqttConnectConstants.MQTT_NON_BLOCKING) != null
-					&& messageContext
-							.getProperty(MqttConnectConstants.MQTT_NON_BLOCKING)
-							.toString().equalsIgnoreCase("true")) {
-				asyncClient = clientLoader.loadAsyncClient();
+			if ("true".equalsIgnoreCase(messageContext
+					.getProperty(MqttConnectConstants.MQTT_NON_BLOCKING)
+					.toString())) {
+				asyncClient = clientFactory.loadAsyncClient();
 				isAsync = true;
 				IMqttDeliveryToken pubToken = asyncClient.publish(topic,
 						msg.getBytes(), qos, false);
 				pubToken.waitForCompletion();
+				log.debug("Publish is completed to the topic: "+topic+" in QoS: "+qos+" by Async MQTT Client: "+asyncClient.getClientId() );
 			} else {
-				Client = clientLoader.loadClient();
-				Client.publish(topic, new MqttMessage(msg.getBytes()));
+				Client = clientFactory.loadClient();
+				Client.publish(topic, msg.getBytes(), qos, false);
+				log.debug("Publish is completed to the topic: "+topic+" in QoS: "+qos+" by Blocking MQTT Client: "+Client.getClientId() );
 				isAsync = false;
 			}
 
 			messageContext.setProperty(MqttConnectConstants.INIT_MODE, "false");
 
 			// disconnect the client if specified in the input parameters
-			if (MqttUtils.lookupTemplateParamater(messageContext,
-					MqttConnectConstants.MQTT_DIS) != null
-					&& MqttUtils.lookupTemplateParamater(messageContext,
-							MqttConnectConstants.MQTT_DIS).equalsIgnoreCase(
-							"true")) {
+			if ("true".equalsIgnoreCase(MqttUtils.lookupTemplateParamater(messageContext,
+					MqttConnectConstants.MQTT_DIS))) {
 				if (isAsync) {
 					asyncClient.disconnect();
 					asyncClient.close();
@@ -95,7 +94,7 @@ public class MqttPublish extends AbstractConnector {
 					Client.disconnect();
 					Client.close();
 				}
-				clientLoader.destroyClient(ID, isAsync);
+				clientFactory.destroyClient(ID, isAsync);
 			}
 
 		} catch (MqttPersistenceException e) {
