@@ -40,6 +40,7 @@ public class MqttConnectConstants {
 	public static final String MQTT_QOS = "qos";
 	public static final String MQTT_MSG = "msg";
 	public static final String MQTT_DIS = "disconnectAfter";
+	public static final String MQTT_RETAINED = "retained";
 
 	public static final String INIT_MODE = "initMode";
 

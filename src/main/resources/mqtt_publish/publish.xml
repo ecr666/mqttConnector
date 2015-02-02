@@ -20,6 +20,7 @@
     <parameter name="topic"/>
     <parameter name="msg"/>
     <parameter name="qos"/>
+    <parameter name="retained"/>
     <parameter name="disconnectAfter"/>
     <sequence>
         <class name="org.wso2.carbon.connector.mqtt.MqttPublish"/>

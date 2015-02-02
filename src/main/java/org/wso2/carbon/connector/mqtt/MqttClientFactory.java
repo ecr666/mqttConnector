@@ -17,16 +17,13 @@
  */
 package org.wso2.carbon.connector.mqtt;
 
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.eclipse.paho.client.mqttv3.IMqttToken;
-import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Create the client and connect it to the hostName+port with given options
@@ -34,8 +31,10 @@ import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
  */
 public class MqttClientFactory {
 	private MessageContext messageContext;
-	private static ConcurrentHashMap<String, MqttClient> Clients = new ConcurrentHashMap<String, MqttClient>();
-	private static ConcurrentHashMap<String, MqttAsyncClient> AsyncClients = new ConcurrentHashMap<String, MqttAsyncClient>();
+	private static ConcurrentHashMap<String, MqttClient> Clients =
+			new ConcurrentHashMap<String, MqttClient>();
+	private static ConcurrentHashMap<String, MqttAsyncClient> AsyncClients =
+			new ConcurrentHashMap<String, MqttAsyncClient>();
 	private static final Log log = LogFactory.getLog(MqttClientFactory.class);
 
 	public MqttClientFactory(MessageContext ctxt) {
@@ -48,13 +47,13 @@ public class MqttClientFactory {
 	public MqttClient loadClient() throws MqttException, NumberFormatException {
 		MqttClient blockingClient = null;
 		if (messageContext
-				.getProperty(MqttConnectConstants.MQTT_SERVER_HOST_NAME) != null
-				&& messageContext
-						.getProperty(MqttConnectConstants.MQTT_SERVER_PORT) != null) {
+				    .getProperty(MqttConnectConstants.MQTT_SERVER_HOST_NAME) != null
+		    && messageContext
+				       .getProperty(MqttConnectConstants.MQTT_SERVER_PORT) != null) {
 			// setting protocol and url
 			String protocol = "tcp://";
 			if (messageContext
-					.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE) != null)
+					    .getProperty(MqttConnectConstants.MQTT_SSL_ENABLE) != null)
 				if (messageContext
 						.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE)
 						.toString().equalsIgnoreCase("true"))
@@ -69,7 +68,7 @@ public class MqttClientFactory {
 			// setting persistence location
 			String tmpDir = System.getProperty("java.io.tmpdir");
 			if (messageContext
-					.getProperty(MqttConnectConstants.MQTT_PERSISTANCE) != null) {
+					    .getProperty(MqttConnectConstants.MQTT_PERSISTANCE) != null) {
 				tmpDir = messageContext.getProperty(
 						MqttConnectConstants.MQTT_PERSISTANCE).toString();
 			}
@@ -79,7 +78,7 @@ public class MqttClientFactory {
 			// getting the blocking client and connecting it to the MB
 			String ID = (String) messageContext.getProperty("ClientID");
 			if (messageContext.getProperty(MqttConnectConstants.INIT_MODE)
-					.equals("true")) {
+			                  .equals("true")) {
 				blockingClient = new MqttClient(broker, ID);
 				Clients.put(ID, blockingClient);
 			} else {
@@ -98,16 +97,16 @@ public class MqttClientFactory {
 	 * @return non-blocking client
 	 */
 	public MqttAsyncClient loadAsyncClient() throws MqttException,
-			NumberFormatException {
+	                                                NumberFormatException {
 		MqttAsyncClient asyncClient = null;
 		if (messageContext
-				.getProperty(MqttConnectConstants.MQTT_SERVER_HOST_NAME) != null
-				&& messageContext
-						.getProperty(MqttConnectConstants.MQTT_SERVER_PORT) != null) {
+				    .getProperty(MqttConnectConstants.MQTT_SERVER_HOST_NAME) != null
+		    && messageContext
+				       .getProperty(MqttConnectConstants.MQTT_SERVER_PORT) != null) {
 			// setting protocol
 			String protocol = "tcp://";
 			if (messageContext
-					.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE) != null)
+					    .getProperty(MqttConnectConstants.MQTT_SSL_ENABLE) != null)
 				if (messageContext
 						.getProperty(MqttConnectConstants.MQTT_SSL_ENABLE)
 						.toString().equalsIgnoreCase("true"))
@@ -119,21 +118,10 @@ public class MqttClientFactory {
 			String broker = protocol + hostName + ":" + port;
 			log.info("Setting Async client to the broker: " + broker);
 
-			// setting persistence location
-			String tmpDir = System.getProperty("java.io.tmpdir");
-
-			if (messageContext
-					.getProperty(MqttConnectConstants.MQTT_PERSISTANCE) != null) {
-				tmpDir = messageContext.getProperty(
-						MqttConnectConstants.MQTT_PERSISTANCE).toString();
-			}
-			MqttDefaultFilePersistence dataStore = new MqttDefaultFilePersistence(
-					tmpDir);
-
 			// creating the async client and connecting it
 			String ID = (String) messageContext.getProperty("ClientID");
 			if (messageContext.getProperty(MqttConnectConstants.INIT_MODE)
-					.equals("true")) {
+			                  .equals("true")) {
 				asyncClient = new MqttAsyncClient(broker, ID);
 				AsyncClients.put(ID, asyncClient);
 			}
@@ -150,8 +138,9 @@ public class MqttClientFactory {
 
 	/**
 	 * Remove the client from the HashMap when disconnects
+	 *
 	 * @param ClientID
-	 * @param isAsync client
+	 * @param isAsync  client
 	 */
 	public void destroyClient(String ID, boolean isAsync) {
 		if (isAsync) {
@@ -163,6 +152,7 @@ public class MqttClientFactory {
 
 	/**
 	 * Setting options to the mqtt client
+	 *
 	 * @return options
 	 */
 	private MqttConnectOptions getOptions() {
@@ -170,36 +160,39 @@ public class MqttClientFactory {
 		MqttConnectOptions options = new MqttConnectOptions();
 
 		// set username and password
-		if (messageContext.getProperty(MqttConnectConstants.MQTT_USERNAME) != null
-				&& messageContext
-						.getProperty(MqttConnectConstants.MQTT_PASSWORD) != null) {
-			options.setUserName(messageContext.getProperty(
-					MqttConnectConstants.MQTT_USERNAME).toString());
-			options.setUserName(messageContext.getProperty(
-					MqttConnectConstants.MQTT_PASSWORD).toString());
+		Object userName = messageContext.getProperty(MqttConnectConstants.MQTT_USERNAME);
+		Object password = messageContext.getProperty(MqttConnectConstants.MQTT_PASSWORD);
+		if (userName != null && password != null) {
+			options.setUserName(userName.toString());
+			options.setUserName(password.toString());
 		}
 
 		// set last will settings
+		String lwMsg;
+		String lwTopic;
+		String lwQos;
 		if (messageContext.getProperty(MqttConnectConstants.MQTT_LW_MSG) != null
-				&& messageContext
-						.getProperty(MqttConnectConstants.MQTT_LW_TOPIC) != null) {
+		    && messageContext
+				       .getProperty(MqttConnectConstants.MQTT_LW_TOPIC) != null) {
 			int qos = 1;
 			boolean retained = false;
 			if (messageContext.getProperty(MqttConnectConstants.MQTT_LW_QOS) != null) {
 				if (messageContext
+						    .getProperty(MqttConnectConstants.MQTT_LW_QOS)
+						    .toString().equals("0")
+				    || messageContext
 						.getProperty(MqttConnectConstants.MQTT_LW_QOS)
-						.toString().equals("0")
-						|| messageContext
-								.getProperty(MqttConnectConstants.MQTT_LW_QOS)
-								.toString().equals("2")) {
+						.toString().equals("2")) {
 					qos = Integer.parseInt(messageContext.getProperty(
 							MqttConnectConstants.MQTT_LW_QOS).toString());
 				}
 			}
-			if (messageContext
-					.getProperty(MqttConnectConstants.MQTT_LW_RETAINED)
-					.toString().equalsIgnoreCase("true")) {
-				retained = true;
+			if (messageContext.getProperty(MqttConnectConstants.MQTT_LW_RETAINED) != null) {
+				if (messageContext
+						.getProperty(MqttConnectConstants.MQTT_LW_RETAINED)
+						.toString().equalsIgnoreCase("true")) {
+					retained = true;
+				}
 			}
 			options.setWill(
 					messageContext.getProperty(
