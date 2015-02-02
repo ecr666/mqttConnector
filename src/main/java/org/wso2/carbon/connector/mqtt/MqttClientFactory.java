@@ -65,16 +65,6 @@ public class MqttClientFactory {
 			String broker = protocol + hostName + ":" + port;
 			log.info("Setting client to the broker: " + broker);
 
-			// setting persistence location
-			String tmpDir = System.getProperty("java.io.tmpdir");
-			if (messageContext
-					    .getProperty(MqttConnectConstants.MQTT_PERSISTANCE) != null) {
-				tmpDir = messageContext.getProperty(
-						MqttConnectConstants.MQTT_PERSISTANCE).toString();
-			}
-			MqttDefaultFilePersistence dataStore = new MqttDefaultFilePersistence(
-					tmpDir);
-
 			// getting the blocking client and connecting it to the MB
 			String ID = (String) messageContext.getProperty("ClientID");
 			if (messageContext.getProperty(MqttConnectConstants.INIT_MODE)
